@@ -1,0 +1,5 @@
+SELECT TBLS.name as TableName,MC.NAME ColumnName, MC.is_masked IsMasked, MC.masking_function MaskFunction  
+FROM sys.masked_columns AS MC 
+JOIN sys.tables AS TBLS   
+ON MC.object_id = TBLS.object_id  
+WHERE is_masked = 1; 
