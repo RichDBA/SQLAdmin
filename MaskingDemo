@@ -1,0 +1,206 @@
+
+Use WideWorldImporters
+
+--Toy table  1,080,060 rows
+--make sure the masking is not set
+ALTER TABLE [WideWorldImporters].[dbo].[Toy]  
+ALTER COLUMN Type varchar(50)
+
+
+
+--verify user sees data
+EXECUTE AS USER = 'PTSUser';  
+
+SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+
+  REVERT;
+
+--apply the defauly mask
+ALTER TABLE [WideWorldImporters].[dbo].[Toy]  
+ALTER COLUMN Type varchar(50) MASKED WITH (FUNCTION = 'default()'); 
+
+--how it looks to the system
+SELECT TBLS.name as TableName,MC.NAME ColumnName, MC.is_masked IsMasked, MC.masking_function MaskFunction  
+FROM sys.masked_columns AS MC 
+JOIN sys.tables AS TBLS   
+ON MC.object_id = TBLS.object_id  
+WHERE is_masked = 1; 
+
+
+--verify user sees masked data
+EXECUTE AS USER = 'PTSUser';  
+
+SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+
+  REVERT;
+
+--view from elevated privs
+
+  SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+
+
+--change the mask
+ALTER TABLE [WideWorldImporters].[dbo].[Toy]  
+ALTER COLUMN Type varchar(50) MASKED WITH (FUNCTION = 'partial(2,"XX",2)'); 
+
+--give permissions to user
+Grant Unmask to PTSUser
+
+--can they see it?
+EXECUTE AS USER = 'PTSUser';  
+
+SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+
+  REVERT;
+--remove the rights
+  Revoke Unmask to PTSUser
+
+--check it
+
+EXECUTE AS USER = 'PTSUser';  
+
+SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+ 
+
+  REVERT;
+
+  --proof that you can still search if you know the value
+
+  EXECUTE AS USER = 'PTSUser';  
+
+SELECT TOP (1000) [Toy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+ where type = 'doll'
+
+  REVERT;
+
+
+  --apply the new mask
+ALTER TABLE [WideWorldImporters].[dbo].[Toy]  
+ALTER COLUMN Type varchar(50) MASKED WITH (FUNCTION = 'partial(0,"**MASKED**",0)');  
+
+  --Got write rights!
+  --I'm going to steal the data!
+
+  USE [WideWorldImporters]
+GO
+ALTER ROLE [db_datawriter] ADD MEMBER [PTSuser]
+GO
+  
+CREATE TABLE [dbo].[NewToy](
+	[NewToy_ID] [int]  NULL,
+	[Company] [varchar](80) NULL,
+	[Type] [varchar](50)  NULL,
+	[Name] [varchar](100) NULL,
+	[ReleaseDate] [date] NULL,
+	[AddDate] [datetime] NULL,
+	[AddUser] [varchar](50) NULL,
+	[ModDate] [datetime] NULL,
+	[ModUser] [varchar](50) NULL)
+	
+
+Execute as user = 'PTSUser';
+Insert into dbo.NewToy
+(
+[Company] ,
+[Type],
+[Name],
+[ReleaseDate] ,
+[AddDate] ,
+[AddUser] ,
+[ModDate] ,
+[ModUser] )
+
+SELECT TOP (1000) 
+      [Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[Toy]
+
+Revert;
+
+--Did it work?
+
+  EXECUTE AS USER = 'PTSUser';  
+
+SELECT [NewToy_ID]
+      ,[Company]
+      ,[Type]
+      ,[Name]
+      ,[ReleaseDate]
+      ,[AddDate]
+      ,[AddUser]
+      ,[ModDate]
+      ,[ModUser]
+  FROM [WideWorldImporters].[dbo].[NewToy]
+
+
+  
+Revert;
+ 
+ --done
+  drop table NewToy
+
+ --bad user, no write rights
+ USE [WideWorldImporters]
+GO
+ALTER ROLE [db_datawriter] DROP MEMBER [PTSuser]
+GO
