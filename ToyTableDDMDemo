@@ -1,0 +1,29 @@
+USE [WideWorldImporters]
+GO
+
+/****** Object:  Table [dbo].[Toy]    Script Date: 7/19/2019 9:26:59 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Toy](
+	[Toy_ID] [int] IDENTITY(1,1) NOT NULL,
+	[Company] [varchar](80) NULL,
+	[Type] [varchar](50) NULL,
+	[Name] [varchar](100) NULL,
+	[ReleaseDate] [date] NULL,
+	[AddDate] [datetime] NULL,
+	[AddUser] [varchar](50) NULL,
+	[ModDate] [datetime] NULL,
+	[ModUser] [varchar](50) NULL,
+ CONSTRAINT [PK_Toy] PRIMARY KEY CLUSTERED 
+(
+	[Toy_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [USERDATA]
+) ON [USERDATA]
+GO
+
+ALTER TABLE [dbo].[Toy] ADD  CONSTRAINT [DF_Inv.Toy_AddDate]  DEFAULT (getdate()) FOR [AddDate]
+GO
